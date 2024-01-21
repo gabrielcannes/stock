@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { GetCategoriesResponse } from '../../../../models/interfaces/categories/responses/GetCategoriesResponse';
-import { CardModule } from 'primeng/card';
+import { EditCategoryAction } from 'src/app/models/interfaces/categories/event/EditCategoryAction';
+
 
 @Component({
   selector: 'app-categories-table',
@@ -9,4 +10,6 @@ import { CardModule } from 'primeng/card';
 })
 export class CategoriesTableComponent {
   @Input() public categories: Array<GetCategoriesResponse> = []
+  @Output() public categoryEvent = new EventEmitter<EditCategoryAction>()
+  public categorySelected!: GetCategoriesResponse
 }
