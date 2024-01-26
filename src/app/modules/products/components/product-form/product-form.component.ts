@@ -23,13 +23,12 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   private readonly destroy$: Subject<void> = new Subject();
   public categoriesDatas: Array<GetCategoriesResponse> = [];
   public selectedCategory: Array<{ name: string; code: string }> = [];
-  public producDatas: Array<GetAllProductsResponse> = []
   public productAction!: {
-    event: EventAction,
-    productDatas: Array<GetAllProductsResponse>
-  }
-  public productSelectedDatas!: GetAllProductsResponse
-
+    event: EventAction;
+    productDatas: Array<GetAllProductsResponse>;
+  };
+  public productSelectedDatas!: GetAllProductsResponse;
+  public productsDatas: Array<GetAllProductsResponse> = [];
   public addProductForm = this.formBuilder.group({
     name: ['', Validators.required],
     price: ['', Validators.required],
@@ -37,39 +36,41 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     category_id: ['', Validators.required],
     amount: [0, Validators.required],
   });
-
   public editProductForm = this.formBuilder.group({
     name: ['', Validators.required],
     price: ['', Validators.required],
     description: ['', Validators.required],
     amount: [0, Validators.required],
-    category_id: ['', Validators.required]
-  })
+  });
 
-  public addProductAction = ProductEvent.ADD_PRODUCT_EVENT
-  public editProductAction = ProductEvent.EDIT_PRODUCT_EVENT
-  public saleProductAction = ProductEvent.SALE_PRODUCT_EVENT
-  public renderDropdown = false
+  public addProductAction = ProductEvent.ADD_PRODUCT_EVENT;
+  public editProductAction = ProductEvent.EDIT_PRODUCT_EVENT;
+  public saleProductAction = ProductEvent.SALE_PRODUCT_EVENT;
 
   constructor(
     private categoriesService: CategoriesService,
     private productsService: ProductsService,
-    private productDtService: ProductsDataTransferService,
+    private productsDtService: ProductsDataTransferService,
     private formBuilder: FormBuilder,
     private messageService: MessageService,
     private router: Router,
-    private ref: DynamicDialogConfig,
-  ) { }
+    public ref: DynamicDialogConfig
+  ) {}
 
   ngOnInit(): void {
-    this.productAction = this.ref.data
+    this.productAction = this.ref.data;
 
-    if (this.productAction?.event?.action === this.saleProductAction) {
-      this.getProductDatas()
+    if (
+      this.productAction?.event?.action === this.editProductAction &&
+      this.productAction?.productDatas
+    ) {
+      this.getProductSelectedDatas(this.productAction?.event?.id as string);
     }
 
+    this.productAction?.event?.action === this.saleProductAction &&
+      this.getProductDatas();
+
     this.getAllCategories();
-    this.renderDropdown = true
   }
 
   getAllCategories(): void {
@@ -80,9 +81,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response.length > 0) {
             this.categoriesDatas = response;
-            if (this.productAction?.event.action === this.editProductAction && this.productAction.productDatas) {
-              this.getProductSelectedDatas(this.productAction?.event?.id as string)
-            }
           }
         },
       });
@@ -139,8 +137,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         description: this.editProductForm.value.description as string,
         product_id: this.productAction?.event?.id,
         amount: this.editProductForm.value.amount as number,
-        category_id: this.editProductForm.value.category_id as string
-      }
+      };
+
       this.productsService
         .editProduct(requestEditProduct)
         .pipe(takeUntil(this.destroy$))
@@ -150,56 +148,58 @@ export class ProductFormComponent implements OnInit, OnDestroy {
               severity: 'success',
               summary: 'Sucesso',
               detail: 'Produto editado com sucesso!',
-              life: 2500
-            })
-          }, error: (err) => {
+              life: 2500,
+            });
+            this.editProductForm.reset();
+          },
+          error: (err) => {
             console.log(err);
             this.messageService.add({
               severity: 'error',
               summary: 'Erro',
               detail: 'Erro ao editar produto!',
-              life: 2500
-            })
-          }
-        })
-      this.editProductForm.reset()
+              life: 2500,
+            });
+            this.editProductForm.reset();
+          },
+        });
     }
   }
 
   getProductSelectedDatas(productId: string): void {
-    const allProducts = this.productAction?.productDatas
+    const allProducts = this.productAction?.productDatas;
+
     if (allProducts.length > 0) {
-      const productFiltered = allProducts.filter((element) => {
-        return element?.id === productId
-      })
+      const productFiltered = allProducts.filter(
+        (element) => element?.id === productId
+      );
 
       if (productFiltered) {
-        this.productSelectedDatas = productFiltered[0]
+        this.productSelectedDatas = productFiltered[0];
 
         this.editProductForm.setValue({
           name: this.productSelectedDatas?.name,
           price: this.productSelectedDatas?.price,
-          description: this.productSelectedDatas?.description,
           amount: this.productSelectedDatas?.amount,
-          category_id: this.productSelectedDatas?.category?.id
-        })
+          description: this.productSelectedDatas?.description,
+        });
       }
     }
   }
 
   getProductDatas(): void {
-    this.productsService.getAllProducts()
+    this.productsService
+      .getAllProducts()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.length > 0) {
-            this.producDatas = response
-            if (this.producDatas) {
-              this.productDtService.setProductsDatas(this.producDatas)
-            }
+            this.productsDatas = response;
+            this.productsDatas &&
+              this.productsDtService.setProductsDatas(this.productsDatas);
           }
-        }
-      })
+        },
+      });
   }
 
   ngOnDestroy(): void {

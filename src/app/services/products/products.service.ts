@@ -60,6 +60,6 @@ export class ProductsService {
       `${this.API_URL}/product/edit`,
       requestDatas,
       this.httpOptions
-    )
+    );
   }
 }

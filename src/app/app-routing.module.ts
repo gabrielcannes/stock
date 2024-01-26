@@ -31,9 +31,12 @@ const routes: Routes = [
   },
   {
     path: 'categories',
-    loadChildren: () => import("./modules/categories/categories.module").then((m) => m.CategoriesModule),
-    canActivate: [AuthGuard]
-  }
+    loadChildren: () =>
+      import('./modules/categories/categories.module').then(
+        (m) => m.CategoriesModule
+      ),
+    canActivate: [AuthGuard],
+  },
 ];
 
 @NgModule({
